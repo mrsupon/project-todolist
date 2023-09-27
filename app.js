@@ -39,8 +39,8 @@ const listSchema = {
 const List = mongoose.model("List",listSchema);
 
 
-app.get("/", function(req, res) {
-  Item.find({}).then( foundItems =>{ 
+app.get("/", async(req, res) =>{
+  await Item.find({}).then( foundItems =>{ 
     if(foundItems.length === 0 ){
         Item.insertMany(defaultItems).then(() =>{
             console.log("Data inserted")  // Success 
@@ -58,9 +58,10 @@ app.get("/", function(req, res) {
 
 });
 
-app.get("/:listName", async function (req,res){
+app.get("/:listName", async (req,res)=>{
   const listName = req.params.listName;
-  await List.findOne({name:listName}).then( foundList =>{ 
+  await List.findOne({name:listName})
+  .then( foundList =>{ 
     if(foundList === null ){
         const list = new List({name:listName, items:defaultItems});
         list.save().then(() =>{
@@ -73,13 +74,14 @@ app.get("/:listName", async function (req,res){
     else{
         res.render("list", {listTitle: listName, newListItems: foundList.items});
     }
-  }).catch(function(error){
+  })
+  .catch(function(error){
     console.log(error)                  // Failure
   });  
 
 });
 
-app.post("/", function(req, res){
+app.post("/", async(req, res) =>{
   const newItem = req.body.newItem; 
   const listName = req.body.listName; 
   const item = new Item({name: newItem});
@@ -89,7 +91,7 @@ app.post("/", function(req, res){
       res.redirect("/");
   }
   else{ 
-      List.findOne({name:listName})
+      await List.findOne({name:listName})
       .then( foundList =>{
         foundList.items.push(item);     // Success 
         foundList.save();
@@ -103,14 +105,16 @@ app.post("/", function(req, res){
 
 });
 
-app.post("/delete", function(req, res){
+app.post("/delete", async(req, res) =>{
   const deletingId = req.body.checkbox ;
   const listName = req.body.listName;
   if(listName === "Today"){
-    Item.findByIdAndRemove({_id:deletingId}).then( deletedItem =>{
+    await Item.findByIdAndRemove({_id:deletingId})
+    .then( deletedItem =>{
       console.log("Sucessfully deleted checked item!")
       res.redirect("/");       
-    }).catch(function(error){
+    })
+    .catch( error=>{
       console.log(error)                  // Failure
     });
   }
@@ -124,8 +128,6 @@ app.post("/delete", function(req, res){
     });
   }
 });
-
-
 
 
 app.listen(3000, function() {
